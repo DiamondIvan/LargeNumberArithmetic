@@ -56,6 +56,13 @@ public class LargeNumber {
             }
         }
 
+        // Strip leading zeros before building nodes ──────────
+        // Advance startIndex past any leading '0' characters,
+        // but always keep at least the last digit (e.g. "0" stays as "0")
+        while (startIndex < trimmed.length() - 1 && trimmed.charAt(startIndex) == '0') {
+            startIndex++;
+        }
+
         // Build the DLL from validated digits
         for (int i = startIndex; i < trimmed.length(); i++) {
             appendDigit(trimmed.charAt(i) - '0');
@@ -142,7 +149,7 @@ public class LargeNumber {
 
     // Check if this number is zero (handles both empty list and single zero digit)
     public boolean isZero() {
-        return head == null || (head == tail && head.digit == 0);
+        return this.toString().equals("0");
     }
 
     // Convenience comparison helpers (unsigned — ignores negative flag)

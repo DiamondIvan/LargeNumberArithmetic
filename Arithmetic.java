@@ -200,7 +200,7 @@ public class Arithmetic {
                     quotient.append(count);
                 }
 
-                LargeNumber multiple = multiply(b, new LargeNumber(String.valueOf(count)));
+                LargeNumber multiple = multiplyByDigit(b, count);
                 current = subtract(current, multiple);
 
                 if (current.isZero() && i < decimalPlaces)
