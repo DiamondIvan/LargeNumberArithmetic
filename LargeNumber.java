@@ -78,6 +78,18 @@ public class LargeNumber {
         return negative;
     }
 
+    public LargeNumber(LargeNumber other) {
+        head     = null;
+        tail     = null;
+        size     = 0;
+        negative = other.negative;
+        Node cur = other.head;
+        while (cur != null) {
+            appendDigit(cur.digit);
+            cur = cur.next;
+        }
+    }
+
     // Add a digit to the END (least significant side)
     public void appendDigit(int digit) {
         Node newNode = new Node(digit);
@@ -115,12 +127,17 @@ public class LargeNumber {
         }
     }
 
+    public int getSize() {
+        return size;
+    }
+
     // Convert the linked list back to a String for display
     @Override
     public String toString() {
         if (head == null)
             return "0";
         StringBuilder sb = new StringBuilder();
+        if (negative) sb.append('-');
         Node current = head;
         while (current != null) {
             sb.append(current.digit);
@@ -132,8 +149,8 @@ public class LargeNumber {
     // Compare two LargeNumbers: returns 1 if this > other, -1 if this < other, 0 if
     // equal
     public int compareTo(LargeNumber other) {
-        String a = this.toString();
-        String b = other.toString();
+        String a = this.toAbsString();
+        String b = other.toAbsString();
 
         if (a.length() != b.length()) {
             return a.length() > b.length() ? 1 : -1;
@@ -147,9 +164,21 @@ public class LargeNumber {
         return 0; // equal
     }
 
+    // Returns digits without sign — used internally by compareTo() and isZero()
+    public String toAbsString() {
+        if (head == null) return "0";
+        StringBuilder sb      = new StringBuilder();
+        Node          current = head;
+        while (current != null) {
+            sb.append(current.digit);
+            current = current.next;
+        }
+        return sb.toString();
+    }
+
     // Check if this number is zero (handles both empty list and single zero digit)
     public boolean isZero() {
-        return this.toString().equals("0");
+        return toAbsString().equals("0");
     }
 
     // Convenience comparison helpers (unsigned — ignores negative flag)

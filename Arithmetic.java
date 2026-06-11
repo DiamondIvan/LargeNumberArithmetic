@@ -9,31 +9,35 @@ public class Arithmetic {
     // Works from tail (least significant) to head (most significant)
     // -------------------------------------------------------
     public static LargeNumber add(LargeNumber a, LargeNumber b) {
-        LargeNumber result = new LargeNumber();
-        Node pA = a.tail; // start from last digit of a
-        Node pB = b.tail; // start from last digit of b
-        int carry = 0;
-
-        // Process digits from right to left
-        while (pA != null || pB != null || carry != 0) {
-            int digitA = (pA != null) ? pA.digit : 0;
-            int digitB = (pB != null) ? pB.digit : 0;
-
-            int sum = digitA + digitB + carry;
-            carry = sum / 10; // carry for next position
-            int currentDigit = sum % 10;
-
-            result.prependDigit(currentDigit); // add to front since we go right to left
-
-            if (pA != null)
-                pA = pA.prev;
-            if (pB != null)
-                pB = pB.prev;
+        // Both positive: plain addition
+        if (!a.isNegative() && !b.isNegative()) {
+            return absAdd(a, b);
         }
-
-        if (result.head == null)
-            result.appendDigit(0);
-        return result;
+        // Both negative: add magnitudes, mark negative
+        if (a.isNegative() && b.isNegative()) {
+            LargeNumber result = absAdd(a, b);
+            if (!result.isZero()) result.negative = true;
+            return result;
+        }
+        // Different signs: subtract smaller magnitude from larger
+        if (!a.isNegative() && b.isNegative()) {
+            // (+a) + (-b) = a - b
+            if (a.compareTo(b) >= 0) {
+                return absSubtract(a, b);               // result >= 0
+            } else {
+                LargeNumber result = absSubtract(b, a); // result < 0
+                if (!result.isZero()) result.negative = true;
+                return result;
+            }
+        }
+        // (-a) + (+b) = b - a
+        if (b.compareTo(a) >= 0) {
+            return absSubtract(b, a);                   // result >= 0
+        } else {
+            LargeNumber result = absSubtract(a, b);     // result < 0
+            if (!result.isZero()) result.negative = true;
+            return result;
+        }
     }
 
     // -------------------------------------------------------
@@ -41,38 +45,10 @@ public class Arithmetic {
     // Works from tail (least significant) to head (most significant)
     // -------------------------------------------------------
     public static LargeNumber subtract(LargeNumber a, LargeNumber b) {
-        // Make sure a >= b
-        if (a.compareTo(b) < 0) {
-            System.out.println("Note: a < b, returning 0 for subtraction.");
-            return new LargeNumber("0");
-        }
-
-        LargeNumber result = new LargeNumber();
-        Node pA = a.tail;
-        Node pB = b.tail;
-        int borrow = 0;
-
-        while (pA != null) {
-            int digitA = pA.digit - borrow;
-            int digitB = (pB != null) ? pB.digit : 0;
-
-            if (digitA < digitB) {
-                digitA += 10; // borrow from next position
-                borrow = 1;
-            } else {
-                borrow = 0;
-            }
-
-            int diff = digitA - digitB;
-            result.prependDigit(diff);
-
-            pA = pA.prev;
-            if (pB != null)
-                pB = pB.prev;
-        }
-
-        result.removeLeadingZeros();
-        return result;
+        // Flip b's sign and reuse signed add()
+        LargeNumber negB = new LargeNumber(b);   // copy constructor — don't mutate b
+        if (!negB.isZero()) negB.negative = !negB.negative;
+        return add(a, negB);
     }
 
     // -------------------------------------------------------
@@ -87,65 +63,41 @@ public class Arithmetic {
             return new LargeNumber("0");
         }
 
-        int lenA = a.size;
-        int lenB = b.size;
-
-        // Use an int array to accumulate partial products
-        // Result can have at most lenA + lenB digits
+        // Determine result sign before computing magnitude
+        boolean resultNegative = a.isNegative() != b.isNegative();
+ 
+        int lenA = a.getSize();   // FIX 1: use getter
+        int lenB = b.getSize();   // FIX 1: use getter
+ 
         int[] resultDigits = new int[lenA + lenB];
-
+ 
         // Traverse a from least significant (tail) to most significant (head)
         Node pA = a.tail;
         for (int i = lenA - 1; i >= 0; i--) {
-            // Traverse b from least significant (tail) to most significant (head)
             Node pB = b.tail;
             for (int j = lenB - 1; j >= 0; j--) {
-                int mul = pA.digit * pB.digit;
-                int pos1 = i + j; // carry position
-                int pos2 = i + j + 1; // current position
-
-                int sum = mul + resultDigits[pos2];
+                int mul  = pA.digit * pB.digit;
+                int pos1 = i + j;
+                int pos2 = i + j + 1;
+ 
+                int sum            = mul + resultDigits[pos2];
                 resultDigits[pos2] = sum % 10;
-                resultDigits[pos1] += sum / 10; // add carry
-
+                resultDigits[pos1] += sum / 10;
+ 
                 pB = pB.prev;
             }
             pA = pA.prev;
         }
-
+ 
+        // Build result LargeNumber, skipping leading zeros
         LargeNumber result = new LargeNumber();
         int start = 0;
-        while (start < resultDigits.length - 1 && resultDigits[start] == 0) {
-            start++;
-        }
+        while (start < resultDigits.length - 1 && resultDigits[start] == 0) start++;
         for (int i = start; i < resultDigits.length; i++) {
             result.appendDigit(resultDigits[i]);
         }
-        return result;
-    }
-
-    // Helper: multiply a LargeNumber by a single digit (0-9)
-    // Traverses the linked list from tail to head, tracking carry
-    private static LargeNumber multiplyByDigit(LargeNumber a, int digit) {
-        if (digit == 0)
-            return new LargeNumber("0");
-
-        LargeNumber result = new LargeNumber();
-        Node pA = a.tail; // start from least significant digit
-        int carry = 0;
-
-        // Traverse each node of a from right to left
-        while (pA != null || carry != 0) {
-            int digitA = (pA != null) ? pA.digit : 0;
-            int prod = digitA * digit + carry;
-            carry = prod / 10;
-            result.prependDigit(prod % 10);
-            if (pA != null)
-                pA = pA.prev;
-        }
-
-        if (result.head == null)
-            result.appendDigit(0);
+ 
+        if (resultNegative && !result.isZero()) result.negative = true;
         return result;
     }
 
@@ -158,107 +110,160 @@ public class Arithmetic {
             return "Error: Division by zero";
         }
 
+        boolean resultNegative = a.isNegative() != b.isNegative();
+ 
         StringBuilder quotient = new StringBuilder();
-        LargeNumber current = new LargeNumber("0");
-
-        // Step 1: Integer part — traverse dividend digit by digit using linked list
-        Node pA = a.head; // start from most significant digit
+        LargeNumber   current  = new LargeNumber("0");
+ 
+        // ── Integer part ──────────────────────────────────────────────────
+        Node pA = a.head;
         while (pA != null) {
-            // Bring down next digit into current
             if (current.isZero()) {
                 current = new LargeNumber(String.valueOf(pA.digit));
             } else {
                 current.appendDigit(pA.digit);
             }
-
-            // Find largest digit (0-9) such that digit * b <= current
             int count = findMultiple(current, b);
             quotient.append(count);
-
-            // Subtract count * b from current (progressive subtraction)
-            LargeNumber multiple = multiplyByDigit(b, count);
-            current = subtract(current, multiple);
-
-            pA = pA.next; // move to next digit of dividend
+            current = absSubtract(current, multiplyByDigit(b, count));  // FIX 2
+            pA = pA.next;
         }
-
-        // Step 2: Decimal part (continue dividing the remainder)
-        // We compute one extra digit beyond decimalPlaces for half-up rounding.
+ 
+        // ── Decimal part with half-up rounding ────────────────────────────
         int roundingDigit = 0;
         if (!current.isZero() && decimalPlaces > 0) {
             quotient.append(".");
-            for (int i = 0; i <= decimalPlaces; i++) { // note: <= to get one extra digit
-                // Multiply remainder by 10 (shift left by appending 0)
+            for (int i = 0; i <= decimalPlaces; i++) {
                 current.appendDigit(0);
-
                 int count = findMultiple(current, b);
-
                 if (i == decimalPlaces) {
-                    // This is the extra rounding digit — don't append, just save it
                     roundingDigit = count;
                 } else {
                     quotient.append(count);
                 }
-
-                LargeNumber multiple = multiplyByDigit(b, count);
-                current = subtract(current, multiple);
-
-                if (current.isZero() && i < decimalPlaces)
-                    break; // exact division, stop early
+                current = absSubtract(current, multiplyByDigit(b, count));  // FIX 2
+                if (current.isZero() && i < decimalPlaces) break;
             }
         }
-
-        // Apply half-up rounding: if the extra digit >= 5, increment the last decimal
-        // digit
+ 
+        // Apply half-up rounding
         String result = quotient.toString();
         if (roundingDigit >= 5 && result.contains(".")) {
             result = applyRounding(result);
         }
-
+ 
         // Clean up leading zeros in integer part
-        int dotIndex = result.indexOf('.');
-        String intPart = (dotIndex == -1) ? result : result.substring(0, dotIndex);
-        String decPart = (dotIndex == -1) ? "" : result.substring(dotIndex);
+        int    dotIndex = result.indexOf('.');
+        String intPart  = (dotIndex == -1) ? result : result.substring(0, dotIndex);
+        String decPart  = (dotIndex == -1) ? ""     : result.substring(dotIndex);
         intPart = intPart.replaceFirst("^0+(?!$)", "");
-        if (intPart.isEmpty())
-            intPart = "0";
-
-        return intPart + decPart;
+        if (intPart.isEmpty()) intPart = "0";
+ 
+        // Prepend sign if negative and result is not zero
+        String finalResult = intPart + decPart;
+        if (resultNegative && !finalResult.equals("0")) {
+            finalResult = "-" + finalResult;
+        }
+        return finalResult;
     }
-
+ 
+    // ==========================================================
+    // UNSIGNED (absolute value) helpers — used internally
+    // ==========================================================
+ 
     /**
-     * Applies half-up rounding by incrementing the last character of a
-     * decimal string, propagating carry leftward if needed.
-     * Example: "3.999" -> "4.0" (if last digit rounds up with carry chain)
+     * Adds the absolute values of two LargeNumbers (ignores sign).
+     * Traverses both lists from tail to head with carry tracking.
+     */
+    static LargeNumber absAdd(LargeNumber a, LargeNumber b) {
+        LargeNumber result = new LargeNumber();
+        Node pA    = a.tail;
+        Node pB    = b.tail;
+        int  carry = 0;
+ 
+        while (pA != null || pB != null || carry != 0) {
+            int digitA = (pA != null) ? pA.digit : 0;
+            int digitB = (pB != null) ? pB.digit : 0;
+            int sum    = digitA + digitB + carry;
+            carry      = sum / 10;
+            result.prependDigit(sum % 10);
+            if (pA != null) pA = pA.prev;
+            if (pB != null) pB = pB.prev;
+        }
+ 
+        if (result.head == null) result.appendDigit(0);
+        return result;
+    }
+ 
+    /**
+     * Subtracts the absolute value of b from a (assumes |a| >= |b|).
+     * Traverses from tail to head with borrow tracking.
+     */
+    static LargeNumber absSubtract(LargeNumber a, LargeNumber b) {
+        if (a.compareTo(b) < 0) return new LargeNumber("0");
+ 
+        LargeNumber result = new LargeNumber();
+        Node pA     = a.tail;
+        Node pB     = b.tail;
+        int  borrow = 0;
+ 
+        while (pA != null) {
+            int digitA = pA.digit - borrow;
+            int digitB = (pB != null) ? pB.digit : 0;
+            if (digitA < digitB) { digitA += 10; borrow = 1; }
+            else                 { borrow = 0; }
+            result.prependDigit(digitA - digitB);
+            pA = pA.prev;
+            if (pB != null) pB = pB.prev;
+        }
+ 
+        result.removeLeadingZeros();
+        return result;
+    }
+ 
+    /**
+     * Multiplies a LargeNumber by a single digit (0-9).
+     * Traverses from tail to head with carry tracking. O(n).
+     */
+    private static LargeNumber multiplyByDigit(LargeNumber a, int digit) {
+        if (digit == 0) return new LargeNumber("0");
+        LargeNumber result = new LargeNumber();
+        Node pA    = a.tail;
+        int  carry = 0;
+        while (pA != null || carry != 0) {
+            int digitA = (pA != null) ? pA.digit : 0;
+            int prod   = digitA * digit + carry;
+            carry      = prod / 10;
+            result.prependDigit(prod % 10);
+            if (pA != null) pA = pA.prev;
+        }
+        if (result.head == null) result.appendDigit(0);
+        return result;
+    }
+ 
+    /**
+     * Finds the largest digit q (0-9) such that |b| * q <= |current|.
+     */
+    private static int findMultiple(LargeNumber current, LargeNumber b) {
+        for (int i = 9; i >= 1; i--) {
+            if (current.compareTo(multiplyByDigit(b, i)) >= 0) return i;
+        }
+        return 0;
+    }
+ 
+    /**
+     * Half-up rounding: increments the last digit of a decimal string,
+     * propagating carry leftward if needed.
+     * Example: "3.999" -> "4.0"
      */
     private static String applyRounding(String s) {
         char[] digits = s.toCharArray();
         int i = digits.length - 1;
         while (i >= 0) {
-            if (digits[i] == '.') {
-                i--;
-                continue;
-            } // skip decimal point
-            if (digits[i] < '9') {
-                digits[i]++; // simple increment, no carry needed
-                return new String(digits);
-            } else {
-                digits[i] = '0'; // this digit rolls over, carry propagates left
-                i--;
-            }
+            if (digits[i] == '.') { i--; continue; }
+            if (digits[i] < '9') { digits[i]++; return new String(digits); }
+            else                 { digits[i] = '0'; i--; }
         }
-        // Carry propagated past the first digit: prepend '1'
         return "1" + new String(digits);
-    }
-
-    // Helper: find the largest digit (0-9) such that digit * b <= current
-    private static int findMultiple(LargeNumber current, LargeNumber b) {
-        for (int i = 9; i >= 1; i--) {
-            LargeNumber multiple = multiplyByDigit(b, i);
-            if (current.compareTo(multiple) >= 0) {
-                return i;
-            }
-        }
-        return 0;
     }
 }

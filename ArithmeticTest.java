@@ -45,6 +45,14 @@ public class ArithmeticTest {
                         new LargeNumber("123456789123456789123456789123456789123456789123456789"),
                         new LargeNumber("456789123456789123456789123456789123456789123456789")
                 ).toString());
+        expect("(-5) + 3 = -2",
+                "-2", Arithmetic.add(new LargeNumber("-5"), new LargeNumber("3")).toString());
+        expect("5 + (-3) = 2",
+                "2", Arithmetic.add(new LargeNumber("5"), new LargeNumber("-3")).toString());
+        expect("(-5) + (-3) = -8",
+                "-8", Arithmetic.add(new LargeNumber("-5"), new LargeNumber("-3")).toString());
+        expect("(-5) + 5 = 0 (no negative zero)",
+                "0", Arithmetic.add(new LargeNumber("-5"), new LargeNumber("5")).toString());
     }
 
     // -------------------------------------------------------
@@ -63,8 +71,12 @@ public class ArithmeticTest {
         expect("100 - 99 = 1",
                 "1", Arithmetic.subtract(new LargeNumber("100"), new LargeNumber("99")).toString());
         // a < b returns 0
-        expect("3 - 7 = 0 (a < b guard)",
-                "0", Arithmetic.subtract(new LargeNumber("3"), new LargeNumber("7")).toString());
+        expect("3 - 7 = -4 (signed result)",
+                "-4", Arithmetic.subtract(new LargeNumber("3"), new LargeNumber("7")).toString());
+        expect("(-3) - 2 = -5",
+                "-5", Arithmetic.subtract(new LargeNumber("-3"), new LargeNumber("2")).toString());
+        expect("(-3) - (-2) = -1",
+                "-1", Arithmetic.subtract(new LargeNumber("-3"), new LargeNumber("-2")).toString());
     }
 
     // -------------------------------------------------------
@@ -84,6 +96,19 @@ public class ArithmeticTest {
                 "998001", Arithmetic.multiply(new LargeNumber("999"), new LargeNumber("999")).toString());
         expect("12 * 34 = 408",
                 "408", Arithmetic.multiply(new LargeNumber("12"), new LargeNumber("34")).toString());
+        expect("Spec Example 1 multiplication",
+            "56393718488493483920593249352693014784792780216892530351019811918200464868202810547205156226207501" +
+            "90521",
+            Arithmetic.multiply(
+                new LargeNumber("123456789123456789123456789123456789123456789123456789"),
+                new LargeNumber("456789123456789123456789123456789123456789123456789")
+            ).toString());
+        expect("(-5) * 3 = -15",
+            "-15", Arithmetic.multiply(new LargeNumber("-5"), new LargeNumber("3")).toString());
+        expect("5 * (-3) = -15",
+            "-15", Arithmetic.multiply(new LargeNumber("5"), new LargeNumber("-3")).toString());
+        expect("(-5) * (-3) = 15",
+            "15", Arithmetic.multiply(new LargeNumber("-5"), new LargeNumber("-3")).toString());
     }
 
     // -------------------------------------------------------
@@ -106,6 +131,12 @@ public class ArithmeticTest {
                 "0.66667", Arithmetic.divide(new LargeNumber("2"), new LargeNumber("3"), 5));
         expect("999 / 1 = 999 (exact)",
                 "999", Arithmetic.divide(new LargeNumber("999"), new LargeNumber("1"), 5));
+        expect("(-10) / 2 = -5",
+                "-5", Arithmetic.divide(new LargeNumber("-10"), new LargeNumber("2"), 5));
+        expect("10 / (-2) = -5",
+                "-5", Arithmetic.divide(new LargeNumber("10"), new LargeNumber("-2"), 5));
+        expect("(-10) / (-2) = 5",
+                "5", Arithmetic.divide(new LargeNumber("-10"), new LargeNumber("-2"), 5));
     }
 
     // -------------------------------------------------------
@@ -116,7 +147,7 @@ public class ArithmeticTest {
 
         // null input
         try {
-            new LargeNumber(null);
+            new LargeNumber((String) null);
             System.out.println("  FAIL  null input should throw");
             failed++;
         } catch (IllegalArgumentException e) {
@@ -191,6 +222,35 @@ public class ArithmeticTest {
         expect("5.isGreaterThan(10) = false",  "false", String.valueOf(five.isGreaterThan(ten)));
         expect("10.isLessThan(5) = false",     "false", String.valueOf(ten.isLessThan(five)));
         expect("10.isEqualTo(5) = false",      "false", String.valueOf(ten.isEqualTo(five)));
+    }
+
+    // ----------------------------------------------------------
+    // COPY CONSTRUCTOR tests
+    // ----------------------------------------------------------
+    static void testCopyConstructor() {
+        System.out.println("\n--- Copy Constructor ---");
+        LargeNumber original = new LargeNumber("12345");
+        LargeNumber copy     = new LargeNumber(original);
+ 
+        expect("Copy equals original",    "12345", copy.toString());
+        expect("Copy is a separate object","true",
+            String.valueOf(original != copy));
+ 
+        // Mutate copy and confirm original is unchanged
+        copy.appendDigit(6);
+        expect("Original unchanged after mutating copy", "12345", original.toString());
+        expect("Copy reflects mutation",                 "123456", copy.toString());
+    }
+
+    // ----------------------------------------------------------
+    // SIZE ACCURACY tests
+    // ----------------------------------------------------------
+    static void testSizeAccuracy() {
+        System.out.println("\n--- getSize() Accuracy ---");
+        expect("'123' has size 3",   "3", String.valueOf(new LargeNumber("123").getSize()));
+        expect("'007' strips to '7', size 1", "1", String.valueOf(new LargeNumber("007").getSize()));
+        expect("'0' has size 1",     "1", String.valueOf(new LargeNumber("0").getSize()));
+        expect("'1000' has size 4",  "4", String.valueOf(new LargeNumber("1000").getSize()));
     }
 
     // -------------------------------------------------------
