@@ -1,7 +1,10 @@
 /**
  * Main class to demonstrate Large Number Arithmetic.
- * Tests the two examples from the project specification.
+ * Tests the two examples from the project specification,
+ * then lets the user enter their own numbers interactively.
  */
+import java.util.Scanner;
+
 public class Main {
 
     // Display the results of all four operations neatly
@@ -50,5 +53,29 @@ public class Main {
         String m3 = "999";
         String n3 = "1";
         displayResults(m3, n3);
+
+        // ------- Interactive mode: let the user enter their own numbers -------
+        Scanner sc = new Scanner(System.in);
+        System.out.println("----------------------------------------------");
+        System.out.println("Enter your own numbers (press Enter with no");
+        System.out.println("input to quit):");
+        while (true) {
+            System.out.print("  m = ");
+            String m = sc.nextLine().trim();
+            if (m.isEmpty()) break;
+
+            System.out.print("  n = ");
+            String n = sc.nextLine().trim();
+            if (n.isEmpty()) break;
+
+            try {
+                displayResults(m, n);
+            } catch (IllegalArgumentException e) {
+                System.out.println("Invalid input: " + e.getMessage());
+                System.out.println("Please enter positive integers only.\n");
+            }
+        }
+        sc.close();
+        System.out.println("Goodbye!");
     }
 }

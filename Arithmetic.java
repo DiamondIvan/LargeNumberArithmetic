@@ -73,30 +73,40 @@ public class Arithmetic {
 
     // -------------------------------------------------------
     // MULTIPLICATION: multiplies a by b digit by digit
-    // Uses the standard long multiplication approach
+    // Traverses DLL nodes directly (tail -> head) to stay true
+    // to the doubly linked list data structure requirement.
+    // Uses the standard long multiplication approach.
     // -------------------------------------------------------
     public static LargeNumber multiply(LargeNumber a, LargeNumber b) {
-        // Convert to string arrays for easier indexed access
-        String strA = a.toString();
-        String strB = b.toString();
-        int lenA = strA.length();
-        int lenB = strB.length();
+        // Short-circuit: anything * 0 = 0
+        if (a.isZero() || b.isZero()) {
+            return new LargeNumber("0");
+        }
+
+        int lenA = a.size;
+        int lenB = b.size;
 
         // Use an int array to accumulate partial products
         // Result can have at most lenA + lenB digits
         int[] resultDigits = new int[lenA + lenB];
 
-        // Multiply each digit of b with each digit of a (right to left)
+        // Traverse a from least significant (tail) to most significant (head)
+        Node pA = a.tail;
         for (int i = lenA - 1; i >= 0; i--) {
+            // Traverse b from least significant (tail) to most significant (head)
+            Node pB = b.tail;
             for (int j = lenB - 1; j >= 0; j--) {
-                int mul = (strA.charAt(i) - '0') * (strB.charAt(j) - '0');
+                int mul = pA.digit * pB.digit;
                 int pos1 = i + j;       // carry position
                 int pos2 = i + j + 1;   // current position
 
                 int sum = mul + resultDigits[pos2];
                 resultDigits[pos2] = sum % 10;
                 resultDigits[pos1] += sum / 10;  // add carry
+
+                pB = pB.prev;
             }
+            pA = pA.prev;
         }
 
         // Build LargeNumber from result array
@@ -110,7 +120,7 @@ public class Arithmetic {
 
     // -------------------------------------------------------
     // DIVISION: divides a by b, returns quotient with decimal places
-    // Uses long division approach
+    // Uses long division approach with half-up rounding on the last digit.
     // -------------------------------------------------------
     public static String divide(LargeNumber a, LargeNumber b, int decimalPlaces) {
         if (b.isZero()) {
@@ -140,37 +150,67 @@ public class Arithmetic {
         }
 
         // Step 2: Decimal part (continue dividing the remainder)
+        // We compute one extra digit beyond decimalPlaces for half-up rounding.
+        int roundingDigit = 0;
         if (!current.isZero() && decimalPlaces > 0) {
             quotient.append(".");
-            for (int i = 0; i < decimalPlaces; i++) {
+            for (int i = 0; i <= decimalPlaces; i++) {  // note: <= to get one extra digit
                 // Multiply remainder by 10 (shift left by appending 0)
-                if (current.isZero()) {
-                    current.appendDigit(0);
-                } else {
-                    current.appendDigit(0);
-                }
+                current.appendDigit(0);
 
                 int count = findMultiple(current, b);
-                quotient.append(count);
+
+                if (i == decimalPlaces) {
+                    // This is the extra rounding digit — don't append, just save it
+                    roundingDigit = count;
+                } else {
+                    quotient.append(count);
+                }
 
                 LargeNumber multiple = multiply(b, new LargeNumber(String.valueOf(count)));
                 current = subtract(current, multiple);
 
-                if (current.isZero()) break; // no more remainder
+                if (current.isZero() && i < decimalPlaces) break; // exact division, stop early
             }
         }
 
-        // Clean up leading zeros in integer part
+        // Apply half-up rounding: if the extra digit >= 5, increment the last decimal digit
         String result = quotient.toString();
+        if (roundingDigit >= 5 && result.contains(".")) {
+            result = applyRounding(result);
+        }
+
+        // Clean up leading zeros in integer part
         int dotIndex = result.indexOf('.');
         String intPart = (dotIndex == -1) ? result : result.substring(0, dotIndex);
         String decPart = (dotIndex == -1) ? "" : result.substring(dotIndex);
 
-        // Remove leading zeros from integer part
         intPart = intPart.replaceFirst("^0+(?!$)", "");
         if (intPart.isEmpty()) intPart = "0";
 
         return intPart + decPart;
+    }
+
+    /**
+     * Applies half-up rounding by incrementing the last character of a
+     * decimal string, propagating carry leftward if needed.
+     * Example: "3.999" -> "4.0" (if last digit rounds up with carry chain)
+     */
+    private static String applyRounding(String s) {
+        char[] digits = s.toCharArray();
+        int i = digits.length - 1;
+        while (i >= 0) {
+            if (digits[i] == '.') { i--; continue; } // skip decimal point
+            if (digits[i] < '9') {
+                digits[i]++;  // simple increment, no carry needed
+                return new String(digits);
+            } else {
+                digits[i] = '0';  // this digit rolls over, carry propagates left
+                i--;
+            }
+        }
+        // Carry propagated past the first digit: prepend '1'
+        return "1" + new String(digits);
     }
 
     // Helper: find the largest digit (0-9) such that digit * b <= current

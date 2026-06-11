@@ -2,28 +2,72 @@
  * LargeNumber class using a Doubly Linked List.
  * Digits are stored from MOST significant (head) to LEAST significant (tail).
  * Example: "123" -> head:[1] <-> [2] <-> [3]:tail
+ *
+ * Supports an optional negative flag for signed arithmetic.
  */
 public class LargeNumber {
-    Node head;  // most significant digit
-    Node tail;  // least significant digit
+    Node head;      // most significant digit
+    Node tail;      // least significant digit
     int size;
+    boolean negative; // true if this number is negative
 
     public LargeNumber() {
         head = null;
         tail = null;
         size = 0;
+        negative = false;
     }
 
-    // Build a LargeNumber from a String (e.g. "12345")
+    /**
+     * Build a LargeNumber from a String.
+     * Accepts an optional leading '-' for negative numbers.
+     * Throws IllegalArgumentException for null, blank, or non-numeric input.
+     */
     public LargeNumber(String number) {
         head = null;
         tail = null;
         size = 0;
-        for (char c : number.toCharArray()) {
-            if (Character.isDigit(c)) {
-                appendDigit(c - '0');
+        negative = false;
+
+        // --- Input validation ---
+        if (number == null) {
+            throw new IllegalArgumentException("Input cannot be null.");
+        }
+        String trimmed = number.trim();
+        if (trimmed.isEmpty()) {
+            throw new IllegalArgumentException("Input cannot be empty.");
+        }
+
+        // Strip optional leading '-'
+        int startIndex = 0;
+        if (trimmed.charAt(0) == '-') {
+            negative = true;
+            startIndex = 1;
+            if (trimmed.length() == 1) {
+                throw new IllegalArgumentException("Input '" + number + "' is not a valid number.");
             }
         }
+
+        // Validate that every remaining character is a digit
+        for (int i = startIndex; i < trimmed.length(); i++) {
+            if (!Character.isDigit(trimmed.charAt(i))) {
+                throw new IllegalArgumentException(
+                    "Input '" + number + "' contains non-numeric character: '" + trimmed.charAt(i) + "'");
+            }
+        }
+
+        // Build the DLL from validated digits
+        for (int i = startIndex; i < trimmed.length(); i++) {
+            appendDigit(trimmed.charAt(i) - '0');
+        }
+
+        // "-0" should not be considered negative
+        if (isZero()) negative = false;
+    }
+
+    // Returns true if this number is negative
+    public boolean isNegative() {
+        return negative;
     }
 
     // Add a digit to the END (least significant side)
@@ -93,8 +137,21 @@ public class LargeNumber {
         return 0; // equal
     }
 
-    // Check if this number is zero
+    // Check if this number is zero (handles both empty list and single zero digit)
     public boolean isZero() {
-        return head != null && head == tail && head.digit == 0;
+        return head == null || (head == tail && head.digit == 0);
+    }
+
+    // Convenience comparison helpers (unsigned — ignores negative flag)
+    public boolean isGreaterThan(LargeNumber other) {
+        return this.compareTo(other) > 0;
+    }
+
+    public boolean isLessThan(LargeNumber other) {
+        return this.compareTo(other) < 0;
+    }
+
+    public boolean isEqualTo(LargeNumber other) {
+        return this.compareTo(other) == 0;
     }
 }
