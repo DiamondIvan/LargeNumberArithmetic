@@ -146,20 +146,22 @@ public class LargeNumber {
         return sb.toString();
     }
 
-    // Compare two LargeNumbers: returns 1 if this > other, -1 if this < other, 0 if
-    // equal
+    // Compare two LargeNumbers: returns 1 if |this| > |other|, -1 if |this| < |other|, 0 if equal
+    // Evaluates Absolute Value (ignores negative flag).
     public int compareTo(LargeNumber other) {
-        String a = this.toAbsString();
-        String b = other.toAbsString();
-
-        if (a.length() != b.length()) {
-            return a.length() > b.length() ? 1 : -1;
+        if (this.size != other.size) {
+            return this.size > other.size ? 1 : -1;
         }
-        // Same length: compare digit by digit
-        for (int i = 0; i < a.length(); i++) {
-            if (a.charAt(i) != b.charAt(i)) {
-                return a.charAt(i) > b.charAt(i) ? 1 : -1;
+        
+        Node pA = this.head;
+        Node pB = other.head;
+        
+        while (pA != null && pB != null) {
+            if (pA.digit != pB.digit) {
+                return pA.digit > pB.digit ? 1 : -1;
             }
+            pA = pA.next;
+            pB = pB.next;
         }
         return 0; // equal
     }

@@ -41,8 +41,7 @@ public class Arithmetic {
     }
 
     // -------------------------------------------------------
-    // SUBTRACTION: subtracts b from a (assumes a >= b)
-    // Works from tail (least significant) to head (most significant)
+    // SUBTRACTION: subtracts b from a
     // -------------------------------------------------------
     public static LargeNumber subtract(LargeNumber a, LargeNumber b) {
         // Flip b's sign and reuse signed add()
@@ -53,9 +52,6 @@ public class Arithmetic {
 
     // -------------------------------------------------------
     // MULTIPLICATION: multiplies a by b digit by digit
-    // Traverses DLL nodes directly (tail -> head) to stay true
-    // to the doubly linked list data structure requirement.
-    // Uses the standard long multiplication approach.
     // -------------------------------------------------------
     public static LargeNumber multiply(LargeNumber a, LargeNumber b) {
         // Short-circuit: anything * 0 = 0
@@ -103,7 +99,6 @@ public class Arithmetic {
 
     // -------------------------------------------------------
     // DIVISION: divides a by b, returns quotient with decimal places
-    // Uses long division approach with half-up rounding on the last digit.
     // -------------------------------------------------------
     public static String divide(LargeNumber a, LargeNumber b, int decimalPlaces) {
         if (b.isZero()) {

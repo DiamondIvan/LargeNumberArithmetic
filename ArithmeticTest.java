@@ -70,7 +70,7 @@ public class ArithmeticTest {
                 "0", Arithmetic.subtract(new LargeNumber("5"), new LargeNumber("5")).toString());
         expect("100 - 99 = 1",
                 "1", Arithmetic.subtract(new LargeNumber("100"), new LargeNumber("99")).toString());
-        // a < b returns 0
+        // Standard signed subtractions
         expect("3 - 7 = -4 (signed result)",
                 "-4", Arithmetic.subtract(new LargeNumber("3"), new LargeNumber("7")).toString());
         expect("(-3) - 2 = -5",

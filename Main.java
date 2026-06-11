@@ -19,24 +19,16 @@ public class Main {
         LargeNumber numN = new LargeNumber(n);
 
         // Addition
-        LargeNumber sum = Arithmetic.add(numM, numN);
-        System.out.println("Addition        = " + sum);
+        System.out.println("Addition        = " + Arithmetic.add(numM, numN));
 
-        // Subtraction — check m >= n upfront and warn clearly before output
-        if (numM.compareTo(numN) < 0) {
-            System.out.println("Subtraction     = Note: |m| < |n|, result is negative: "
-                + Arithmetic.subtract(numM, numN));
-        } else {
-            System.out.println("Subtraction     = " + Arithmetic.subtract(numM, numN));
-        }
+        // Subtraction 
+        System.out.println("Subtraction     = " + Arithmetic.subtract(numM, numN));
 
         // Multiplication
-        LargeNumber product = Arithmetic.multiply(numM, numN);
-        System.out.println("Multiplication  = " + product);
+        System.out.println("Multiplication  = " + Arithmetic.multiply(numM, numN));
 
         // Division (with up to 20 decimal places)
-        String quotient = Arithmetic.divide(numM, numN, 20);
-        System.out.println("Division        = " + quotient);
+        System.out.println("Division        = " + Arithmetic.divide(numM, numN, 20));
 
         System.out.println("==============================================\n");
     }
