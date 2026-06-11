@@ -73,100 +73,120 @@ public class Arithmetic {
 
     // -------------------------------------------------------
     // MULTIPLICATION: multiplies a by b digit by digit
-    // Uses the standard long multiplication approach
+    // Traverses linked list nodes directly (no String/array conversion)
+    // For each digit of b (right to left), multiply against each digit
+    // of a (right to left), shift by position, then add partial results
     // -------------------------------------------------------
     public static LargeNumber multiply(LargeNumber a, LargeNumber b) {
-        // Convert to string arrays for easier indexed access
-        String strA = a.toString();
-        String strB = b.toString();
-        int lenA = strA.length();
-        int lenB = strB.length();
-
-        // Use an int array to accumulate partial products
-        // Result can have at most lenA + lenB digits
-        int[] resultDigits = new int[lenA + lenB];
-
-        // Multiply each digit of b with each digit of a (right to left)
-        for (int i = lenA - 1; i >= 0; i--) {
-            for (int j = lenB - 1; j >= 0; j--) {
-                int mul = (strA.charAt(i) - '0') * (strB.charAt(j) - '0');
-                int pos1 = i + j;       // carry position
-                int pos2 = i + j + 1;   // current position
-
-                int sum = mul + resultDigits[pos2];
-                resultDigits[pos2] = sum % 10;
-                resultDigits[pos1] += sum / 10;  // add carry
+        LargeNumber result = new LargeNumber("0");
+ 
+        Node pB = b.tail;   // start from least significant digit of b
+        int shift = 0;      // positional shift (how many zeros to append)
+ 
+        // Traverse each digit of b from right to left
+        while (pB != null) {
+            int digitB = pB.digit;
+ 
+            if (digitB != 0) {
+                // Multiply every digit of a by digitB using linked list traversal
+                LargeNumber partial = multiplyByDigit(a, digitB);
+ 
+                // Shift left by appending 'shift' zeros (positional value)
+                for (int i = 0; i < shift; i++) {
+                    partial.appendDigit(0);
+                }
+ 
+                // Accumulate into result using add
+                result = add(result, partial);
             }
+ 
+            shift++;
+            pB = pB.prev;   // move to next digit of b (right to left)
         }
 
-        // Build LargeNumber from result array
+        return result;
+    }
+
+    // Helper: multiply a LargeNumber by a single digit (0-9)
+    // Traverses the linked list from tail to head, tracking carry
+    private static LargeNumber multiplyByDigit(LargeNumber a, int digit) {
+        if (digit == 0) return new LargeNumber("0");
+ 
         LargeNumber result = new LargeNumber();
-        for (int digit : resultDigits) {
-            result.appendDigit(digit);
+        Node pA = a.tail;   // start from least significant digit
+        int carry = 0;
+ 
+        // Traverse each node of a from right to left
+        while (pA != null || carry != 0) {
+            int digitA = (pA != null) ? pA.digit : 0;
+            int prod = digitA * digit + carry;
+            carry = prod / 10;
+            result.prependDigit(prod % 10);
+            if (pA != null) pA = pA.prev;
         }
-        result.removeLeadingZeros();
+ 
+        if (result.head == null) result.appendDigit(0);
         return result;
     }
 
     // -------------------------------------------------------
     // DIVISION: divides a by b, returns quotient with decimal places
-    // Uses long division approach
+    // Uses long division: find suitable multiple, subtract progressively
     // -------------------------------------------------------
     public static String divide(LargeNumber a, LargeNumber b, int decimalPlaces) {
         if (b.isZero()) {
             return "Error: Division by zero";
         }
 
-        String dividend = a.toString();
         StringBuilder quotient = new StringBuilder();
         LargeNumber current = new LargeNumber("0");
-
-        // Step 1: Integer part of division (long division)
-        for (int i = 0; i < dividend.length(); i++) {
+ 
+        // Step 1: Integer part — traverse dividend digit by digit using linked list
+        Node pA = a.head;   // start from most significant digit
+        while (pA != null) {
             // Bring down next digit into current
             if (current.isZero()) {
-                current = new LargeNumber(String.valueOf(dividend.charAt(i) - '0'));
+                current = new LargeNumber(String.valueOf(pA.digit));
             } else {
-                current.appendDigit(dividend.charAt(i) - '0');
+                current.appendDigit(pA.digit);
             }
-
-            // Find how many times b goes into current
+ 
+            // Find largest digit (0-9) such that digit * b <= current
             int count = findMultiple(current, b);
             quotient.append(count);
-
-            // Subtract count * b from current
-            LargeNumber multiple = multiply(b, new LargeNumber(String.valueOf(count)));
+ 
+            // Subtract count * b from current (progressive subtraction)
+            LargeNumber multiple = multiplyByDigit(b, count);
             current = subtract(current, multiple);
+ 
+            pA = pA.next;   // move to next digit of dividend
         }
 
-        // Step 2: Decimal part (continue dividing the remainder)
+        // Step 2: Decimal part — keep multiplying remainder by 10
         if (!current.isZero() && decimalPlaces > 0) {
             quotient.append(".");
             for (int i = 0; i < decimalPlaces; i++) {
-                // Multiply remainder by 10 (shift left by appending 0)
-                if (current.isZero()) {
-                    current.appendDigit(0);
-                } else {
-                    current.appendDigit(0);
-                }
-
+                // Shift remainder left by 1 (multiply by 10)
+                current.appendDigit(0);
+ 
+                // Find largest digit such that digit * b <= current
                 int count = findMultiple(current, b);
                 quotient.append(count);
-
-                LargeNumber multiple = multiply(b, new LargeNumber(String.valueOf(count)));
+ 
+                // Subtract progressively
+                LargeNumber multiple = multiplyByDigit(b, count);
                 current = subtract(current, multiple);
-
-                if (current.isZero()) break; // no more remainder
+ 
+                if (current.isZero()) break; // exact division, no more remainder
             }
         }
-
-        // Clean up leading zeros in integer part
+ 
+        // Clean up leading zeros from integer part
         String result = quotient.toString();
         int dotIndex = result.indexOf('.');
         String intPart = (dotIndex == -1) ? result : result.substring(0, dotIndex);
         String decPart = (dotIndex == -1) ? "" : result.substring(dotIndex);
-
-        // Remove leading zeros from integer part
+ 
         intPart = intPart.replaceFirst("^0+(?!$)", "");
         if (intPart.isEmpty()) intPart = "0";
 
@@ -176,7 +196,7 @@ public class Arithmetic {
     // Helper: find the largest digit (0-9) such that digit * b <= current
     private static int findMultiple(LargeNumber current, LargeNumber b) {
         for (int i = 9; i >= 1; i--) {
-            LargeNumber multiple = multiply(b, new LargeNumber(String.valueOf(i)));
+            LargeNumber multiple = multiplyByDigit(b, i);
             if (current.compareTo(multiple) >= 0) {
                 return i;
             }

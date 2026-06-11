@@ -95,6 +95,6 @@ public class LargeNumber {
 
     // Check if this number is zero
     public boolean isZero() {
-        return head != null && head == tail && head.digit == 0;
+        return this.toString().equals("0");
     }
 }
