@@ -6,8 +6,8 @@
  * Supports an optional negative flag for signed arithmetic.
  */
 public class LargeNumber {
-    Node head;      // most significant digit
-    Node tail;      // least significant digit
+    Node head; // most significant digit
+    Node tail; // least significant digit
     int size;
     boolean negative; // true if this number is negative
 
@@ -52,7 +52,7 @@ public class LargeNumber {
         for (int i = startIndex; i < trimmed.length(); i++) {
             if (!Character.isDigit(trimmed.charAt(i))) {
                 throw new IllegalArgumentException(
-                    "Input '" + number + "' contains non-numeric character: '" + trimmed.charAt(i) + "'");
+                        "Input '" + number + "' contains non-numeric character: '" + trimmed.charAt(i) + "'");
             }
         }
 
@@ -62,7 +62,8 @@ public class LargeNumber {
         }
 
         // "-0" should not be considered negative
-        if (isZero()) negative = false;
+        if (isZero())
+            negative = false;
     }
 
     // Returns true if this number is negative
@@ -110,7 +111,8 @@ public class LargeNumber {
     // Convert the linked list back to a String for display
     @Override
     public String toString() {
-        if (head == null) return "0";
+        if (head == null)
+            return "0";
         StringBuilder sb = new StringBuilder();
         Node current = head;
         while (current != null) {
@@ -120,7 +122,8 @@ public class LargeNumber {
         return sb.toString();
     }
 
-    // Compare two LargeNumbers: returns 1 if this > other, -1 if this < other, 0 if equal
+    // Compare two LargeNumbers: returns 1 if this > other, -1 if this < other, 0 if
+    // equal
     public int compareTo(LargeNumber other) {
         String a = this.toString();
         String b = other.toString();
