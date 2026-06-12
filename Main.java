@@ -1,3 +1,4 @@
+
 /**
  * Main class to demonstrate Large Number Arithmetic.
  * Tests the two examples from the project specification,
@@ -21,13 +22,13 @@ public class Main {
         // Addition
         System.out.println("Addition        = " + Arithmetic.add(numM, numN));
 
-        // Subtraction 
+        // Subtraction
         System.out.println("Subtraction     = " + Arithmetic.subtract(numM, numN));
 
         // Multiplication
         System.out.println("Multiplication  = " + Arithmetic.multiply(numM, numN));
 
-        // Division (with up to 20 decimal places)
+        // Division
         System.out.println("Division        = " + Arithmetic.divide(numM, numN, 20));
 
         System.out.println("==============================================\n");
@@ -35,12 +36,10 @@ public class Main {
 
     public static void main(String[] args) {
 
-        // ------- Example 1 from the project spec -------
         String m1 = "123456789123456789123456789123456789123456789123456789";
         String n1 = "456789123456789123456789123456789123456789123456789";
         displayResults(m1, n1);
 
-        // ------- Example 2 from the project spec -------
         String m2 = "55";
         String n2 = "2";
         displayResults(m2, n2);
@@ -69,11 +68,13 @@ public class Main {
         while (true) {
             System.out.print("m = ");
             String m = sc.nextLine().trim();
-            if (m.isEmpty()) break;
+            if (m.isEmpty())
+                break;
 
             System.out.print("n = ");
             String n = sc.nextLine().trim();
-            if (n.isEmpty()) break;
+            if (n.isEmpty())
+                break;
 
             try {
                 // Validate both inputs before running any operations
